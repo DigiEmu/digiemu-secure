@@ -33,3 +33,9 @@ jobs:
 
       - name: Run conformance tests
         run: npx tsx src/conformance-runner.ts
+
+      - name: Run API integration tests
+        run: npm run test:api
+
+      - name: Run CLI integration tests
+        run: npm run test:cli

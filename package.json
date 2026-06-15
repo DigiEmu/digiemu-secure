@@ -9,7 +9,9 @@
     "sign:example": "tsx src/sign-receipt.ts examples/secure-receipt.unsigned.example.json",
     "verify:example": "tsx src/verify-receipt.ts examples/secure-receipt.signed.example.json",
     "secure:verify": "node dist/cli.js verify",
-    "secure:sign": "node dist/cli.js sign"
+    "secure:sign": "node dist/cli.js sign",
+    "test:api": "tsx tests/api.test.ts",
+    "test:cli": "npm run build && tsx tests/cli.test.ts"
   },
   "bin": {
     "secure": "./dist/cli.js"
