@@ -1,0 +1,27 @@
+{
+  "name": "digiemu-secure",
+  "version": "0.1.0",
+  "description": "Cryptographic protection layer for DigiEmu Core evidence artifacts.",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "sign:example": "tsx src/sign-receipt.ts examples/secure-receipt.unsigned.example.json",
+    "verify:example": "tsx src/verify-receipt.ts examples/secure-receipt.signed.example.json"
+  },
+  "keywords": [
+    "digiemu",
+    "secure",
+    "deterministic-ai",
+    "verification",
+    "cryptographic-evidence",
+    "ed25519"
+  ],
+  "author": "Baumgartner Digital Infrastructure",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}

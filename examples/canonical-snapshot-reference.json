@@ -1,0 +1,12 @@
+{
+  "snapshot_id": "digiemu-snapshot-001",
+  "core_profile": "DigiEmu-Core-2.0",
+  "canonicalization_profile": "DigiEmu-Core-2.0-Canonical-JSON",
+  "decision_state_hashes": {
+    "input_hash": "sha256:placeholder-input-hash",
+    "policy_hash": "sha256:placeholder-policy-hash",
+    "model_context_hash": "sha256:placeholder-model-context-hash",
+    "output_hash": "sha256:placeholder-output-hash",
+    "state_hash": "sha256:placeholder-state-hash"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "receipt_version": "DigiEmu-Secure-Receipt-v0.1",
+  "receipt_id": "secure-rcpt-001",
+  "core_profile": "DigiEmu-Core-2.0",
+  "snapshot_id": "digiemu-snapshot-001",
+  "snapshot_hash": "sha256:placeholder-state-hash",
+  "verification_result": "PASS",
+  "issued_at": "2026-06-15T00:00:00Z",
+  "issuer": {
+    "name": "DigiEmu",
+    "key_id": "digiemu-secure-test-key-001"
+  },
+  "signature": {
+    "algorithm": "Ed25519",
+    "value": "0K8ZdO8TEN+NvXaD2C2ocDr2slKbvoWa3e43FU4mzdNji0qn3GR/hEGVt7AokWbnS4Dlvzt+MsKihBGitv7LCw=="
+  }
+}

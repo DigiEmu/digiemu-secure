@@ -1,0 +1,13 @@
+{
+  "report_version": "DigiEmu-Secure-Verification-Report-v0.1",
+  "receipt_id": "secure-rcpt-001",
+  "outcome": "SECURE_PASS",
+  "checks": {
+    "structure_valid": true,
+    "profile_supported": true,
+    "snapshot_hash_bound": true,
+    "issuer_key_resolved": true,
+    "signature_valid": true
+  },
+  "verified_at": "2026-06-15T00:00:00Z"
+}
