@@ -7,7 +7,12 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "sign:example": "tsx src/sign-receipt.ts examples/secure-receipt.unsigned.example.json",
-    "verify:example": "tsx src/verify-receipt.ts examples/secure-receipt.signed.example.json"
+    "verify:example": "tsx src/verify-receipt.ts examples/secure-receipt.signed.example.json",
+    "secure:verify": "node dist/cli.js verify",
+    "secure:sign": "node dist/cli.js sign"
+  },
+  "bin": {
+    "secure": "./dist/cli.js"
   },
   "keywords": [
     "digiemu",
