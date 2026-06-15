@@ -1,0 +1,45 @@
+{
+  "eventType": "TRIAGE_ASSESSMENT",
+  "eventId": "TRG-2026-0847-001",
+  "timestamp": "2026-01-15T14:32:17Z",
+  "location": {
+    "facilityId": "FIELD-STATION-7",
+    "zone": "TRIAGE-A",
+    "coordinates": {
+      "lat": 31.5017,
+      "lng": 34.4668
+    }
+  },
+  "patient": {
+    "patientId": "PT-2026-0847",
+    "demographics": {
+      "age": 34,
+      "gender": "M",
+      "category": "ADULT"
+    },
+    "chopScore": 3
+  },
+  "assessment": {
+    "presentingComplaint": "Chest pain, difficulty breathing",
+    "vitalSigns": {
+      "bloodPressure": "142/88",
+      "heartRate": 96,
+      "respiratoryRate": 22,
+      "oxygenSaturation": 94,
+      "temperature": 37.2
+    },
+    "consciousnessLevel": "ALERT",
+    "mobilityStatus": "AMBULATORY"
+  },
+  "triageDecision": {
+    "priorityLevel": "URGENT",
+    "recommendedAction": "IMMEDIATE_EVALUATION",
+    "estimatedWaitMinutes": 5,
+    "assignedTo": "RESUSCITATION-BAY-2"
+  },
+  "agent": {
+    "agentId": "TRIAGE-AGENT-v2.1.4",
+    "decisionConfidence": 0.87,
+    "rationaleSummary": "Respiratory distress with elevated vitals"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "reportId": "VRPT-2026-0847-001-A7F3",
+  "generatedAt": "2026-01-15T14:35:42Z",
+  "receiptReference": "RCPT-2026-0847-001-A7F3",
+  "verificationStatus": "VALID",
+  "checks": [
+    {
+      "check": "SIGNATURE_ALGORITHM",
+      "status": "PASS",
+      "detail": "Ed25519 algorithm recognized and supported"
+    },
+    {
+      "check": "PUBLIC_KEY_FORMAT",
+      "status": "PASS",
+      "detail": "Public key format valid for gazacare-demo-signing-key-2026"
+    },
+    {
+      "check": "SIGNATURE_VERIFICATION",
+      "status": "PASS",
+      "detail": "Ed25519 signature cryptographically valid"
+    },
+    {
+      "check": "CANONICAL_SERIALIZATION",
+      "status": "PASS",
+      "detail": "Snapshot re-serialization produces identical canonical form"
+    },
+    {
+      "check": "SNAPSHOT_HASH",
+      "status": "PASS",
+      "detail": "Computed SHA-256 matches signed hash: a3f5c8e9...c2d"
+    },
+    {
+      "check": "TIMESTAMP_VALIDITY",
+      "status": "PASS",
+      "detail": "Signed timestamp (2026-01-15T14:32:18Z) within acceptable range"
+    },
+    {
+      "check": "RECEIPT_VERSION",
+      "status": "PASS",
+      "detail": "Version 0.2 compatible with current verifier"
+    }
+  ],
+  "summary": {
+    "totalChecks": 7,
+    "passed": 7,
+    "failed": 0,
+    "warnings": 0,
+    "conclusion": "Receipt is authentic and untampered. Evidence integrity guaranteed."
+  },
+  "evidenceExtracted": {
+    "eventId": "TRG-2026-0847-001",
+    "eventType": "TRIAGE_ASSESSMENT",
+    "patientId": "PT-2026-0847",
+    "triagePriority": "URGENT",
+    "signedAt": "2026-01-15T14:32:18Z",
+    "signer": "gazacare-demo-signing-key-2026"
+  }
+}

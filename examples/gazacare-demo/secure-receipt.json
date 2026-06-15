@@ -1,0 +1,13 @@
+{
+  "receiptId": "RCPT-2026-0847-001-A7F3",
+  "version": "0.2",
+  "createdAt": "2026-01-15T14:32:18Z",
+  "canonicalSnapshot": {"agent":{"agentId":"TRIAGE-AGENT-v2.1.4","decisionConfidence":0.87,"rationaleSummary":"Respiratory distress with elevated vitals"},"assessment":{"consciousnessLevel":"ALERT","mobilityStatus":"AMBULATORY","presentingComplaint":"Chest pain, difficulty breathing","vitalSigns":{"bloodPressure":"142/88","heartRate":96,"oxygenSaturation":94,"respiratoryRate":22,"temperature":37.2}},"eventId":"TRG-2026-0847-001","eventType":"TRIAGE_ASSESSMENT","location":{"coordinates":{"lat":31.5017,"lng":34.4668},"facilityId":"FIELD-STATION-7","zone":"TRIAGE-A"},"patient":{"chopScore":3,"demographics":{"age":34,"category":"ADULT","gender":"M"},"patientId":"PT-2026-0847"},"timestamp":"2026-01-15T14:32:17Z","triageDecision":{"assignedTo":"RESUSCITATION-BAY-2","estimatedWaitMinutes":5,"priorityLevel":"URGENT","recommendedAction":"IMMEDIATE_EVALUATION"}},
+  "snapshotHash": "a3f5c8e9d2b1476f8019a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d",
+  "signature": {
+    "algorithm": "Ed25519",
+    "publicKey": "gazacare-demo-signing-key-2026",
+    "signatureValue": "3f2a8b4c6d7e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8",
+    "signedAt": "2026-01-15T14:32:18Z"
+  }
+}
