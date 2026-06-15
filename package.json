@@ -28,5 +28,9 @@
     "@types/node": "latest",
     "tsx": "latest",
     "typescript": "latest"
+  },
+  "dependencies": {
+    "@types/express": "^5.0.6",
+    "express": "^5.2.1"
   }
 }
