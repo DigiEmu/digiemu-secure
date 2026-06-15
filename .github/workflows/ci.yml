@@ -30,3 +30,6 @@ jobs:
 
       - name: Verify example
         run: npm run verify:example
+
+      - name: Run conformance tests
+        run: npx tsx src/conformance-runner.ts
