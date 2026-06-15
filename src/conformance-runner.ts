@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url';
 import { BundleVerifier } from './bundle-verifier.js';
 import { canonicalJson } from './canonical-json.js';
 import { sha256Hex } from './hash-utils.js';
+import { generateKeyPairSync, sign } from 'node:crypto';
+import * as crypto from 'node:crypto';
 
 // Test result types
 interface TestResult {
@@ -62,8 +64,26 @@ class ConformanceRunner {
     }
   }
 
+  // Store the key pair for generating valid bundles
+  private keyPair: { publicKey: string; privateKey: crypto.KeyObject } | null = null;
+
   /**
-   * Create a valid bundle for testing
+   * Generate Ed25519 key pair for testing
+   */
+  private getOrCreateKeyPair(): { publicKey: string; privateKey: crypto.KeyObject } {
+    if (!this.keyPair) {
+      const { publicKey, privateKey } = generateKeyPairSync('ed25519');
+      const publicKeyJwk = publicKey.export({ format: 'jwk' });
+      this.keyPair = {
+        publicKey: Buffer.from(publicKeyJwk.x!, 'base64url').toString('base64'),
+        privateKey
+      };
+    }
+    return this.keyPair;
+  }
+
+  /**
+   * Create a valid bundle for testing with real Ed25519 signature
    */
   private createValidBundle(): any {
     const canonicalSnapshot = {
@@ -75,6 +95,14 @@ class ConformanceRunner {
 
     const canonical = canonicalJson(canonicalSnapshot);
     const hash = sha256Hex(canonical);
+
+    // Get or create key pair for signing
+    const { publicKey, privateKey } = this.getOrCreateKeyPair();
+
+    // Create real Ed25519 signature
+    const message = Buffer.from(hash, 'hex');
+    const signatureBuffer = sign(null, message, privateKey);
+    const signatureValue = signatureBuffer.toString('hex');
 
     return {
       bundle_id: 'BNDL-TEST-001-VALID',
@@ -93,8 +121,8 @@ class ConformanceRunner {
           algorithm: 'Ed25519',
           issuer: 'org:test:issuer',
           key_id: 'test-key-001',
-          public_key: 'testPublicKeyString==',
-          signature_value: 'testSignatureValue==',
+          public_key: publicKey,
+          signature_value: signatureValue,
           signed_at: '2026-01-15T14:32:18Z'
         }
       }
@@ -117,21 +145,18 @@ class ConformanceRunner {
     return [
       {
         name: 'TC-001',
-        description: 'Valid bundle returns SECURE_INCOMPLETE or SECURE_PASS',
+        description: 'Valid bundle with real Ed25519 signature returns SECURE_PASS',
         setup: () => {
           const bundle = this.createValidBundle();
           return this.saveBundle(bundle, 'tc001-valid.json');
         },
-        expectedOutcome: 'SECURE_INCOMPLETE', // Prototype returns INCOMPLETE, full impl returns PASS
-        validate: (result) => {
-          const validOutcome = result.outcome === 'SECURE_INCOMPLETE' || result.outcome === 'SECURE_PASS';
-          return {
-            passed: validOutcome,
-            details: validOutcome
-              ? `Outcome ${result.outcome} is acceptable for prototype`
-              : `Expected SECURE_INCOMPLETE or SECURE_PASS, got ${result.outcome}`
-          };
-        }
+        expectedOutcome: 'SECURE_PASS',
+        validate: (result) => ({
+          passed: result.outcome === 'SECURE_PASS',
+          details: result.outcome === 'SECURE_PASS'
+            ? 'Valid signed bundle verified successfully (SECURE_PASS)'
+            : `Expected SECURE_PASS, got ${result.outcome}`
+        })
       },
       {
         name: 'TC-002',
