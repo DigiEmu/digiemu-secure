@@ -1,0 +1,42 @@
+{
+  "registry_version": "0.3",
+  "last_updated": "2026-06-15T20:46:46.442Z",
+  "issuers": [
+    {
+      "issuer_id": "org:gazacare:field-ops:triage-system",
+      "issuer_name": "GazaCare Field Operations Triage System",
+      "status": "active",
+      "keys": [
+        {
+          "key_id": "signing-key-2026-q1",
+          "algorithm": "Ed25519",
+          "public_key": "g4OhNqDwR2XJqzBzTl9K8vLpQm3YsWvEiFxRnHd7J0k=",
+          "status": "active",
+          "valid_from": "2026-01-01T00:00:00Z",
+          "valid_until": "2026-06-30T23:59:59Z"
+        }
+      ]
+    },
+    {
+      "issuer_id": "org:example:suspended:demo",
+      "issuer_name": "Example Suspended Issuer (Demo)",
+      "status": "suspended",
+      "keys": []
+    },
+    {
+      "issuer_id": "org:example:expired:key-demo",
+      "issuer_name": "Example Expired Key Issuer (Demo)",
+      "status": "active",
+      "keys": [
+        {
+          "key_id": "expired-key-2025",
+          "algorithm": "Ed25519",
+          "public_key": "dummyPublicKeyForDemo==",
+          "status": "expired",
+          "valid_from": "2025-01-01T00:00:00Z",
+          "valid_until": "2025-12-31T23:59:59Z"
+        }
+      ]
+    }
+  ]
+}
