@@ -5,7 +5,7 @@
   "private": false,
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "sign:example": "tsx src/sign-receipt.ts examples/secure-receipt.unsigned.example.json",
     "verify:example": "tsx src/verify-receipt.ts examples/secure-receipt.signed.example.json"
   },
