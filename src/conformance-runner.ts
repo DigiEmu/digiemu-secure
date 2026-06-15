@@ -239,6 +239,31 @@ class ConformanceRunner {
               : `Expected SEC-005, got: ${result.failure_codes.map((fc: any) => fc.code).join(', ')}`
           };
         }
+      },
+      {
+        name: 'TC-006',
+        description: 'Strict mode without registry returns SECURE_FAIL with SEC-006',
+        setup: () => {
+          // Enable strict mode on verifier
+          this.verifier.setStrictMode(true);
+          const bundle = this.createValidBundle();
+          return this.saveBundle(bundle, 'tc006-strict-no-registry.json');
+        },
+        expectedOutcome: 'SECURE_FAIL',
+        expectedFailureCodes: ['SEC-006'],
+        validate: (result) => {
+          // Reset strict mode after test
+          this.verifier.setStrictMode(false);
+          const hasIssuerError = result.failure_codes.some(
+            (fc: any) => fc.code === 'SEC-006'
+          );
+          return {
+            passed: result.outcome === 'SECURE_FAIL' && hasIssuerError,
+            details: hasIssuerError
+              ? 'SEC-006 ISSUER_NOT_FOUND detected correctly in strict mode'
+              : `Expected SEC-006, got: ${result.failure_codes.map((fc: any) => fc.code).join(', ')}`
+          };
+        }
       }
     ];
   }

@@ -34,6 +34,7 @@ interface CLIOptions {
   issuer?: string;
   keyId?: string;
   output?: string;
+  strictRegistry?: boolean;
 }
 
 interface CLIResult {
@@ -177,6 +178,9 @@ class SecureCLI {
         case '-o':
           options.output = args[++i];
           break;
+        case '--strict-registry':
+          options.strictRegistry = true;
+          break;
         default:
           if (args[i].startsWith('-')) {
             console.warn(`Warning: Unknown option ${args[i]}`);
@@ -286,7 +290,7 @@ class SecureCLI {
 
     // Configure registry if provided
     if (options.registry && options.trustAnchor) {
-      const registryLoaded = this.verifier.setRegistry(options.registry, options.trustAnchor);
+      const registryLoaded = this.verifier.setRegistry(options.registry, options.trustAnchor, options.strictRegistry);
       if (!registryLoaded) {
         return {
           success: false,
@@ -294,6 +298,11 @@ class SecureCLI {
           message: 'Failed to load registry or trust anchor'
         };
       }
+    }
+
+    // Enable strict mode even if no registry (will cause verification to fail without registry)
+    if (options.strictRegistry && !options.registry) {
+      this.verifier.setStrictMode(true);
     }
 
     // Verify
@@ -459,6 +468,7 @@ Options:
   --json                    Output in JSON format
   --registry <path>       Path to issuer registry JSON
   --trust-anchor <path>   Path to trust anchor JSON
+  --strict-registry       Require registry for verification (no bundled key fallback)
   --issuer <id>           Issuer identifier (default: org:example:cli:signer)
   --key-id <id>           Key identifier (default: cli-signing-key)
   --output, -o <path>     Output file path

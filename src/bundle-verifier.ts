@@ -100,23 +100,37 @@ interface EvidenceBundle {
  * Implements the 10-step verification sequence from v0.4 Verification Profile.
  * File-based only - no networking required.
  */
+export interface VerifyOptions {
+  strictRegistry?: boolean;
+}
+
 export class BundleVerifier {
   private supportedVersions = ['0.4', '0.3'];
   private signatureVerifier = new SignatureVerifier();
   private registryResolver: RegistryResolver | null = null;
   private trustAnchorResolver: TrustAnchorResolver | null = null;
+  private strictRegistry = false;
 
   /**
    * Set up registry and trust anchor resolvers for registry-backed verification
    */
-  setRegistry(registryPath: string, trustAnchorPath: string): boolean {
+  setRegistry(registryPath: string, trustAnchorPath: string, strict = false): boolean {
     this.registryResolver = new RegistryResolver(registryPath);
     this.trustAnchorResolver = new TrustAnchorResolver(trustAnchorPath);
+    this.strictRegistry = strict;
 
     const registryLoaded = this.registryResolver.load();
     const trustAnchorLoaded = this.trustAnchorResolver.load();
 
     return registryLoaded && trustAnchorLoaded;
+  }
+
+  /**
+   * Set strict registry mode
+   * When enabled, registry is required for all verifications (no bundled public_key fallback)
+   */
+  setStrictMode(enabled: boolean): void {
+    this.strictRegistry = enabled;
   }
 
   /**
@@ -401,6 +415,23 @@ export class BundleVerifier {
         return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
       }
     } else {
+      // No registry configured
+      if (this.strictRegistry) {
+        // Strict mode: registry is required, fail verification
+        checks.push({
+          step: 6,
+          check: 'ISSUER_RESOLUTION',
+          status: 'FAIL',
+          details: `Issuer: ${receipt.signature.issuer} (strict mode requires registry)`
+        });
+        failureCodes.push({
+          ...FailureCodes.SEC006,
+          step: 6,
+          description: 'Strict mode enabled but registry not configured or loaded'
+        });
+        return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
+      }
+
       // Fallback to bundled public_key (backward compatibility)
       const hasPublicKey = receipt.signature.public_key && receipt.signature.public_key.length > 0;
       if (hasPublicKey) {

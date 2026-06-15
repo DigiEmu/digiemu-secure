@@ -38,6 +38,7 @@ interface VerifyRequest {
       };
     };
   };
+  strict_registry?: boolean;
 }
 
 interface VerifyResponse {
@@ -158,6 +159,11 @@ class SecureAPI {
           }
         });
         return;
+      }
+
+      // Set strict registry mode if requested
+      if (request.strict_registry) {
+        this.verifier.setStrictMode(true);
       }
 
       // Create temporary file for bundle (bundle verifier expects file path)
