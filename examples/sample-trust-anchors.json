@@ -1,0 +1,45 @@
+{
+  "anchor_set_version": "0.3",
+  "last_updated": "2026-06-15T20:48:29.498Z",
+  "anchors": [
+    {
+      "anchor_id": "gazacare-production-2026",
+      "version": "0.3",
+      "issuer": {
+        "issuer_id": "org:gazacare:field-ops:triage-system",
+        "key_id": "signing-key-2026-q1"
+      },
+      "public_key": "g4OhNqDwR2XJqzBzTl9K8vLpQm3YsWvEiFxRnHd7J0k=",
+      "algorithm": "Ed25519",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_until": "2026-06-30T23:59:59Z",
+      "status": "active"
+    },
+    {
+      "anchor_id": "example-suspended",
+      "version": "0.3",
+      "issuer": {
+        "issuer_id": "org:example:suspended",
+        "key_id": "suspended-key"
+      },
+      "public_key": "suspendedPublicKeyExample=",
+      "algorithm": "Ed25519",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_until": "2026-12-31T23:59:59Z",
+      "status": "suspended"
+    },
+    {
+      "anchor_id": "example-expired",
+      "version": "0.3",
+      "issuer": {
+        "issuer_id": "org:example:expired",
+        "key_id": "expired-key-2025"
+      },
+      "public_key": "expiredPublicKeyExample=",
+      "algorithm": "Ed25519",
+      "valid_from": "2025-01-01T00:00:00Z",
+      "valid_until": "2025-12-31T23:59:59Z",
+      "status": "active"
+    }
+  ]
+}
