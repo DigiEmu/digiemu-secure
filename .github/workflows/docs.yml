@@ -1,0 +1,31 @@
+name: Documentation Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check required documentation files
+        run: |
+          test -f README.md
+          test -f SECURITY.md
+          test -d docs
+          test -d examples/gazacare-demo
+          test -f docs/DigiEmu_Secure_v0_2_Canonical_JSON_Profile.md
+          test -f docs/DigiEmu_Secure_v0_2_Evidence_Lifecycle.md
+          test -f docs/DigiEmu_Secure_v0_2_Boundary_Model.md
+          test -f docs/DigiEmu_Secure_v0_2_Threat_Matrix.md
+          test -f docs/DigiEmu_Secure_v0_3_Trust_Anchor_Model.md
+          test -f docs/DigiEmu_Secure_v0_3_Issuer_Registry_Profile.md
+          test -f docs/DigiEmu_Secure_v0_3_Key_Rotation_Profile.md
+          test -f docs/DigiEmu_Secure_v0_4_Evidence_Bundle_Format.md
+          test -f docs/DigiEmu_Secure_v0_4_Verification_Profile.md
