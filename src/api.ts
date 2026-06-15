@@ -14,6 +14,7 @@
 
 import express, { Request, Response, NextFunction } from 'express';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { BundleVerifier } from './bundle-verifier.js';
 import { RegistryResolver } from './registry-resolver.js';
 import { TrustAnchorResolver } from './trust-anchor-resolver.js';
@@ -48,6 +49,7 @@ interface VerifyResponse {
   receipt_id?: string;
   checks_passed: number;
   checks_total: number;
+  failure_codes?: Array<{ code: string; name: string; severity: string; step: number; description: string }>;
   error?: {
     code: string;
     message: string;
@@ -77,8 +79,26 @@ class SecureAPI {
    * Configure Express middleware
    */
   private setupMiddleware(): void {
-    // JSON body parsing
-    this.app.use(express.json({ limit: '10mb' }));
+    // JSON body parsing with 10MB limit
+    this.app.use(express.json({ 
+      limit: '10mb',
+      type: 'application/json'
+    }));
+
+    // Handle payload too large errors
+    this.app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+      if (err.type === 'entity.too.large') {
+        res.status(413).json({
+          status: 'error',
+          error: {
+            code: 'PAYLOAD_TOO_LARGE',
+            message: 'Request body exceeds 10MB limit'
+          }
+        });
+        return;
+      }
+      next(err);
+    });
 
     // Request logging
     this.app.use((req: Request, res: Response, next: NextFunction) => {
@@ -100,6 +120,24 @@ class SecureAPI {
   }
 
   /**
+   * Content-Type validation middleware for POST endpoints
+   */
+  private requireJsonContentType(req: Request, res: Response, next: NextFunction): void {
+    const contentType = req.headers['content-type'];
+    if (!contentType || !contentType.includes('application/json')) {
+      res.status(415).json({
+        status: 'error',
+        error: {
+          code: 'UNSUPPORTED_MEDIA_TYPE',
+          message: 'Content-Type must be application/json'
+        }
+      });
+      return;
+    }
+    next();
+  }
+
+  /**
    * Configure API routes
    */
   private setupRoutes(): void {
@@ -108,11 +146,11 @@ class SecureAPI {
       res.json({ status: 'ok', service: 'digiemu-secure-api', version: '0.9.0' });
     });
 
-    // Verify endpoint (POST /verify)
-    this.app.post('/verify', this.handleVerify.bind(this));
+    // Verify endpoint (POST /verify) - requires application/json
+    this.app.post('/verify', this.requireJsonContentType.bind(this), this.handleVerify.bind(this));
 
-    // Bundle verify endpoint (POST /bundle/verify - alias)
-    this.app.post('/bundle/verify', this.handleVerify.bind(this));
+    // Bundle verify endpoint (POST /bundle/verify - alias) - requires application/json
+    this.app.post('/bundle/verify', this.requireJsonContentType.bind(this), this.handleVerify.bind(this));
 
     // 404 handler
     this.app.use((req: Request, res: Response) => {
@@ -167,7 +205,9 @@ class SecureAPI {
       }
 
       // Create temporary file for bundle (bundle verifier expects file path)
-      const tempPath = `/tmp/secure-api-bundle-${Date.now()}.json`;
+      // Use crypto.randomUUID() to prevent race condition attacks
+      const tempDir = process.env.TEMP || process.env.TMP || '/tmp';
+      const tempPath = `${tempDir}/secure-api-bundle-${crypto.randomUUID()}.json`;
       fs.writeFileSync(tempPath, JSON.stringify(request.bundle, null, 2));
 
       try {
@@ -185,7 +225,8 @@ class SecureAPI {
           bundle_id: result.bundle_id,
           receipt_id: result.receipt_id,
           checks_passed: result.summary.passed,
-          checks_total: result.summary.total
+          checks_total: result.summary.total,
+          failure_codes: result.failure_codes
         };
 
         // Determine HTTP status code

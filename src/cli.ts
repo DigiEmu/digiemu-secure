@@ -339,8 +339,8 @@ class SecureCLI {
 
       case 'SECURE_INCOMPLETE':
         return {
-          success: true,
-          exitCode: 0,
+          success: false,
+          exitCode: 3,
           message: '⊘ Verification incomplete: Configure registry for full verification',
           data: {
             outcome: result.outcome,
