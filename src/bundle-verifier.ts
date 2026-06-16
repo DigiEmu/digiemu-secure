@@ -35,7 +35,10 @@ const FailureCodes = {
   SEC009: { code: 'SEC-009', name: 'KEY_EXPIRED', severity: 'MAJOR' },
   SEC010: { code: 'SEC-010', name: 'KEY_SUSPENDED', severity: 'MAJOR' },
   SEC011: { code: 'SEC-011', name: 'SIGNATURE_INVALID', severity: 'CRITICAL' },
-  SEC012: { code: 'SEC-012', name: 'ALGORITHM_UNSUPPORTED', severity: 'CRITICAL' },
+  SEC012: { code: 'SEC-012', name: 'TRUST_ANCHOR_NOT_FOUND', severity: 'CRITICAL' },
+  SEC013: { code: 'SEC-013', name: 'TRUST_ANCHOR_INVALID', severity: 'CRITICAL' },
+  SEC014: { code: 'SEC-014', name: 'REGISTRY_SIGNATURE_INVALID', severity: 'CRITICAL' },
+  SEC015: { code: 'SEC-015', name: 'REGISTRY_NOT_TRUSTED', severity: 'CRITICAL' },
 } as const;
 
 interface FailureCode {
@@ -308,19 +311,86 @@ export class BundleVerifier {
     let resolvedFromRegistry = false;
 
     if (this.registryResolver && this.trustAnchorResolver) {
+      // Step 5.5: Resolve Trust Anchor (SEC-012, SEC-013)
+      const trustAnchorResult = this.trustAnchorResolver.resolveByIssuer(receipt.signature.issuer);
+
+      if (!trustAnchorResult.found) {
+        checks.push({
+          step: 6,
+          check: 'TRUST_ANCHOR_RESOLUTION',
+          status: 'FAIL',
+          details: `Trust anchor not found for issuer: ${receipt.signature.issuer}`
+        });
+        failureCodes.push({
+          ...FailureCodes.SEC012,
+          step: 6,
+          description: `Trust anchor not found for issuer: ${receipt.signature.issuer}`
+        });
+        return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
+      }
+
+      if (trustAnchorResult.error) {
+        checks.push({
+          step: 6,
+          check: 'TRUST_ANCHOR_RESOLUTION',
+          status: 'FAIL',
+          details: `Trust anchor invalid: ${trustAnchorResult.error}`
+        });
+        failureCodes.push({
+          ...FailureCodes.SEC013,
+          step: 6,
+          description: `Trust anchor invalid: ${trustAnchorResult.error}`
+        });
+        return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
+      }
+
+      checks.push({
+        step: 6,
+        check: 'TRUST_ANCHOR_RESOLUTION',
+        status: 'PASS',
+        details: `Trust anchor resolved: ${trustAnchorResult.anchor?.anchor_id}`
+      });
+
+      // Step 5.6: Validate Registry against Trust Anchor (SEC-014, SEC-015)
+      // In production, this would verify the registry's digital signature using Trust Anchor public key
+      // For prototype: verify registry entry is trusted by checking issuer exists in registry
+      const registryTrustResult = this.registryResolver.resolveIssuer(receipt.signature.issuer);
+
+      if (!registryTrustResult.found) {
+        checks.push({
+          step: 6,
+          check: 'REGISTRY_TRUST',
+          status: 'FAIL',
+          details: `Registry not trusted: issuer ${receipt.signature.issuer} not found in registry`
+        });
+        failureCodes.push({
+          ...FailureCodes.SEC015,
+          step: 6,
+          description: `Registry not trusted: issuer ${receipt.signature.issuer} not found in registry`
+        });
+        return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
+      }
+
+      checks.push({
+        step: 6,
+        check: 'REGISTRY_TRUST',
+        status: 'PASS',
+        details: 'Registry trusted: issuer found in registry'
+      });
+
       // Registry-backed verification
       const issuerResult = this.registryResolver.resolveIssuer(receipt.signature.issuer);
 
       if (!issuerResult.found) {
         checks.push({
-          step: 6,
+          step: 7,
           check: 'ISSUER_RESOLUTION',
           status: 'FAIL',
           details: `Issuer not found: ${receipt.signature.issuer}`
         });
         failureCodes.push({
           ...FailureCodes.SEC006,
-          step: 6,
+          step: 7,
           description: `Issuer not found in registry: ${receipt.signature.issuer}`
         });
         return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
@@ -329,27 +399,27 @@ export class BundleVerifier {
       if (issuerResult.error) {
         // Issuer suspended or revoked
         checks.push({
-          step: 6,
+          step: 7,
           check: 'ISSUER_RESOLUTION',
           status: 'FAIL',
           details: `Issuer ${receipt.signature.issuer}: ${issuerResult.error}`
         });
         failureCodes.push({
           ...FailureCodes.SEC010,
-          step: 6,
+          step: 7,
           description: `Issuer ${receipt.signature.issuer} is ${issuerResult.error}`
         });
         return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
       }
 
       checks.push({
-        step: 6,
+        step: 7,
         check: 'ISSUER_RESOLUTION',
         status: 'PASS',
         details: `Issuer resolved: ${receipt.signature.issuer}`
       });
 
-      // Step 7: Resolve key via registry (SEC-007, SEC-008, SEC-009, SEC-010)
+      // Step 8: Resolve key via registry (SEC-007, SEC-008, SEC-009, SEC-010)
       const keyResult = this.registryResolver.resolveKey(
         receipt.signature.issuer,
         receipt.signature.key_id
@@ -357,14 +427,14 @@ export class BundleVerifier {
 
       if (!keyResult.found) {
         checks.push({
-          step: 7,
+          step: 8,
           check: 'KEY_RESOLUTION',
           status: 'FAIL',
           details: `Key not found: ${receipt.signature.key_id}`
         });
         failureCodes.push({
           ...FailureCodes.SEC007,
-          step: 7,
+          step: 8,
           description: `Key not found in registry: ${receipt.signature.key_id}`
         });
         return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
@@ -373,7 +443,7 @@ export class BundleVerifier {
       if (keyResult.error) {
         // Key expired, revoked, or suspended
         checks.push({
-          step: 7,
+          step: 8,
           check: 'KEY_RESOLUTION',
           status: 'FAIL',
           details: `Key ${receipt.signature.key_id}: ${keyResult.error}`
@@ -384,7 +454,7 @@ export class BundleVerifier {
                           FailureCodes.SEC007;
         failureCodes.push({
           ...errorCode,
-          step: 7,
+          step: 8,
           description: `Key ${receipt.signature.key_id} is ${keyResult.error}`
         });
         return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
@@ -395,21 +465,21 @@ export class BundleVerifier {
         resolvedPublicKey = keyResult.key.public_key;
         resolvedFromRegistry = true;
         checks.push({
-          step: 7,
+          step: 8,
           check: 'KEY_RESOLUTION',
           status: 'PASS',
           details: `Key resolved: ${receipt.signature.key_id} (public_key: ${resolvedPublicKey.substring(0, 20)}...)`
         });
       } else {
         checks.push({
-          step: 7,
+          step: 8,
           check: 'KEY_RESOLUTION',
           status: 'FAIL',
           details: `Key ${receipt.signature.key_id} has no public_key`
         });
         failureCodes.push({
           ...FailureCodes.SEC007,
-          step: 7,
+          step: 8,
           description: `Key ${receipt.signature.key_id} missing public_key in registry`
         });
         return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
@@ -437,26 +507,26 @@ export class BundleVerifier {
       if (hasPublicKey) {
         resolvedPublicKey = receipt.signature.public_key;
         checks.push({
-          step: 6,
+          step: 7,
           check: 'ISSUER_RESOLUTION',
           status: 'SKIP',
           details: `Issuer: ${receipt.signature.issuer} (no registry, using bundled public_key)`
         });
         checks.push({
-          step: 7,
+          step: 8,
           check: 'KEY_RESOLUTION',
           status: 'SKIP',
           details: `Key: ${receipt.signature.key_id} (no registry, using bundled public_key)`
         });
       } else {
         checks.push({
-          step: 6,
+          step: 7,
           check: 'ISSUER_RESOLUTION',
           status: 'SKIP',
           details: `Issuer: ${receipt.signature.issuer} (no registry configured)`
         });
         checks.push({
-          step: 7,
+          step: 8,
           check: 'KEY_RESOLUTION',
           status: 'SKIP',
           details: `Key: ${receipt.signature.key_id} (no registry configured)`
@@ -464,7 +534,7 @@ export class BundleVerifier {
       }
     }
 
-    // Step 8: Verify signature (using resolved public key) (SEC-011)
+    // Step 9: Verify signature (using resolved public key) (SEC-011)
     let signatureValid = false;
     if (resolvedPublicKey) {
       const sigResult = this.signatureVerifier.verifySignature(
@@ -476,7 +546,7 @@ export class BundleVerifier {
       if (sigResult.outcome === 'PASS') {
         signatureValid = true;
         checks.push({
-          step: 8,
+          step: 9,
           check: 'SIGNATURE_VERIFICATION',
           status: 'PASS',
           details: resolvedFromRegistry
@@ -485,52 +555,52 @@ export class BundleVerifier {
         });
       } else {
         checks.push({
-          step: 8,
+          step: 9,
           check: 'SIGNATURE_VERIFICATION',
           status: 'FAIL',
           details: sigResult.error || 'Signature verification failed'
         });
         failureCodes.push({
           ...FailureCodes.SEC011,
-          step: 8,
+          step: 9,
           description: sigResult.error || 'Signature is invalid or does not match content'
         });
         return this.buildResult(checks, failureCodes, bundle.bundle_id, bundle.signed_receipt?.receipt_id);
       }
     } else {
       checks.push({
-        step: 8,
+        step: 9,
         check: 'SIGNATURE_VERIFICATION',
         status: 'SKIP',
         details: 'Signature verification skipped - no public_key available (configure registry for full verification)'
       });
     }
 
-    // Step 9: Compare verification report (if present)
+    // Step 10: Compare verification report (if present)
     if (bundle.verification_report) {
       checks.push({
-        step: 9,
+        step: 10,
         check: 'REPORT_CONSISTENCY',
         status: 'PASS',
         details: 'Bundled verification report present'
       });
     } else {
       checks.push({
-        step: 9,
+        step: 10,
         check: 'REPORT_CONSISTENCY',
         status: 'SKIP',
         details: 'No bundled verification report'
       });
     }
 
-    // Step 10: Generate outcome
+    // Step 11: Generate outcome
     // If signature was verified successfully, return SECURE_PASS
     // If signature was skipped (no public key), return SECURE_INCOMPLETE
     // If any check failed, we would have already returned SECURE_FAIL
     const outcome: VerificationOutcome = signatureValid ? 'SECURE_PASS' : 'SECURE_INCOMPLETE';
 
     checks.push({
-      step: 10,
+      step: 11,
       check: 'OUTCOME_GENERATION',
       status: 'PASS',
       details: `Outcome: ${outcome}`
