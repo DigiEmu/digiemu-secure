@@ -247,6 +247,43 @@ describe('DigiEmu Secure API Integration Tests', () => {
     console.log('  ✓ AT-006 passed');
   });
 
+  // AT-007: POST /verify with duplicate JSON keys
+  it('AT-007: POST /verify with duplicate property names returns HTTP 400 INVALID_JSON', async () => {
+    const bundle = createValidBundle();
+    const body = JSON.stringify({ bundle }).replace(
+      '"data":{"test":true}',
+      '"data":{"test":true,"test":false}'
+    );
+    assert.ok(body.includes('"test":false'), 'Duplicate key injected');
+
+    const { status, body: response } = await apiRequest('/verify', { method: 'POST', body });
+
+    assert.strictEqual(status, 400, 'Expected HTTP 400');
+    assert.strictEqual(response?.error?.code, 'INVALID_JSON', 'Expected INVALID_JSON error');
+    assert.match(response?.error?.message ?? '', /Duplicate property name "test"/);
+
+    console.log('  ✓ AT-007 passed');
+  });
+
+  // AT-008: __proto__ in canonical snapshot survives the API boundary
+  it('AT-008: POST /verify preserves __proto__ as an ordinary snapshot property', async () => {
+    const snapshotText = '{"event_id":"API-PROTO","__proto__":{"admin":true}}';
+    const hash = sha256Hex(canonicalJson(JSON.parse(snapshotText)));
+    const bundle = JSON.stringify(createValidBundle())
+      .replace(/"canonical_snapshot":\{[^}]*\{[^}]*\}\}/, `"canonical_snapshot":${snapshotText}`)
+      .replace(/"snapshot_hash":\{"algorithm":"SHA-256","value":"[0-9a-f]+"\}/,
+        `"snapshot_hash":{"algorithm":"SHA-256","value":"${hash}"}`);
+    assert.ok(bundle.includes('__proto__') && bundle.includes(hash), 'Snapshot replaced');
+
+    const { status, body } = await apiRequest('/verify', { method: 'POST', body: `{"bundle":${bundle}}` });
+
+    assert.ok(status === 200 || status === 409, 'Expected HTTP 200 or 409');
+    const hashFailure = body?.failure_codes?.some((fc: any) => fc.code === 'SEC-004' || fc.code === 'SEC-003');
+    assert.ok(!hashFailure, `Expected snapshot hash to verify, got ${JSON.stringify(body?.failure_codes)}`);
+
+    console.log('  ✓ AT-008 passed');
+  });
+
 });
 
 // ============================================

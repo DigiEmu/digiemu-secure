@@ -11,6 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'node:url';
+import { parseStrictJson } from './strict-json-parser.js';
 
 // Types matching the v0.3 Issuer Registry Profile
 
@@ -74,7 +75,7 @@ export class RegistryResolver {
       }
 
       const content = fs.readFileSync(this.registryPath, 'utf-8');
-      this.registry = JSON.parse(content) as IssuerRegistry;
+      this.registry = parseStrictJson(content) as IssuerRegistry;
       
       console.log(`Registry loaded: ${this.registry.issuers.length} issuers`);
       return true;

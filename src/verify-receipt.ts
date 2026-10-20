@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createPublicKey, verify } from "node:crypto";
 import { canonicalJson } from "./canonical-json.js";
+import { parseStrictJson } from "./strict-json-parser.js";
 import type { SecureReceiptSigned, SecureVerificationReport } from "./types.js";
 
 const receiptPath = process.argv[2];
@@ -11,7 +12,7 @@ if (!receiptPath) {
   process.exit(1);
 }
 
-const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as SecureReceiptSigned;
+const receipt = parseStrictJson(readFileSync(receiptPath, "utf8")) as SecureReceiptSigned;
 const { signature, ...unsignedPayload } = receipt;
 
 const structureValid = Boolean(receipt.receipt_id && receipt.signature?.value && receipt.issuer?.key_id);

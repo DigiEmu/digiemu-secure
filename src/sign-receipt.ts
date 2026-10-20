@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { sign } from "node:crypto";
 import { canonicalJson } from "./canonical-json.js";
+import { parseStrictJson } from "./strict-json-parser.js";
 import { createEphemeralEd25519KeyPair } from "./test-key.js";
 import type { SecureReceiptSigned, SecureReceiptUnsigned } from "./types.js";
 
@@ -11,7 +12,7 @@ if (!inputPath) {
   process.exit(1);
 }
 
-const receipt = JSON.parse(readFileSync(inputPath, "utf8")) as SecureReceiptUnsigned;
+const receipt = parseStrictJson(readFileSync(inputPath, "utf8")) as SecureReceiptUnsigned;
 const { privateKey, publicKey } = createEphemeralEd25519KeyPair();
 const payload = Buffer.from(canonicalJson(receipt));
 const signature = sign(null, payload, privateKey).toString("base64");

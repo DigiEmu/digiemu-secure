@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'node:url';
 import { canonicalJson } from './canonical-json.js';
+import { parseStrictJson } from './strict-json-parser.js';
 import { sha256Hex } from './hash-utils.js';
 import { SignatureVerifier } from './signature-verifier.js';
 import { RegistryResolver } from './registry-resolver.js';
@@ -630,7 +631,7 @@ export class BundleVerifier {
       }
 
       const content = fs.readFileSync(bundlePath, 'utf-8');
-      const bundle = JSON.parse(content) as EvidenceBundle;
+      const bundle = parseStrictJson(content) as EvidenceBundle;
 
       return { success: true, bundle };
     } catch (error) {

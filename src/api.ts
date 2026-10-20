@@ -18,6 +18,7 @@ import crypto from 'node:crypto';
 import { BundleVerifier } from './bundle-verifier.js';
 import { RegistryResolver } from './registry-resolver.js';
 import { TrustAnchorResolver } from './trust-anchor-resolver.js';
+import { parseStrictJson } from './strict-json-parser.js';
 
 // Types
 interface VerifyRequest {
@@ -79,11 +80,29 @@ class SecureAPI {
    * Configure Express middleware
    */
   private setupMiddleware(): void {
-    // JSON body parsing with 10MB limit
-    this.app.use(express.json({ 
+    // JSON body parsing with 10MB limit (raw text, parsed strictly to reject duplicate keys)
+    this.app.use(express.text({
       limit: '10mb',
       type: 'application/json'
     }));
+    this.app.use((req: Request, res: Response, next: NextFunction) => {
+      if (typeof req.body !== 'string') {
+        next();
+        return;
+      }
+      try {
+        req.body = parseStrictJson(req.body);
+        next();
+      } catch (error) {
+        res.status(400).json({
+          status: 'error',
+          error: {
+            code: 'INVALID_JSON',
+            message: error instanceof Error ? error.message : String(error)
+          }
+        });
+      }
+    });
 
     // Handle payload too large errors
     this.app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -188,7 +207,7 @@ class SecureAPI {
       const request = req.body as VerifyRequest;
 
       // Validate request
-      if (!request.bundle) {
+      if (!request?.bundle) {
         res.status(400).json({
           status: 'error',
           error: {

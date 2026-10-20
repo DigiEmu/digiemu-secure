@@ -213,6 +213,36 @@ describe('DigiEmu Secure CLI Integration Tests', () => {
     console.log('  ✓ CT-006 passed');
   });
 
+  // CT-007: verify bundle with duplicate JSON keys fails
+  it('CT-007: verify bundle with duplicate property names returns non-zero exit code', async () => {
+    const valid = fs.readFileSync(VALID_BUNDLE_PATH, 'utf-8');
+    const duplicated = valid.replace('"triage_level": "YELLOW",', '"triage_level": "RED",\n    "triage_level": "YELLOW",');
+    assert.notStrictEqual(duplicated, valid, 'Duplicate key injected');
+    const bundlePath = path.join(TEST_DIR, 'ct007-duplicate.json');
+    fs.writeFileSync(bundlePath, duplicated);
+
+    const result = await runCli(['verify', bundlePath, '--json']);
+
+    assert.ok(result.exitCode !== 0, `Expected non-zero exit code, got ${result.exitCode}`);
+    const output = result.stdout + result.stderr;
+    assert.ok(output.includes('SECURE_FAIL'), 'Expected SECURE_FAIL in output');
+    assert.ok(output.includes('SEC-001'), 'Expected SEC-001 in output');
+    assert.ok(output.includes('Duplicate property name'), 'Expected duplicate key error');
+    console.log('  ✓ CT-007 passed');
+  });
+
+  // CT-008: sign snapshot with duplicate JSON keys fails
+  it('CT-008: sign snapshot with duplicate property names returns exit code 2', async () => {
+    const snapshotPath = path.join(TEST_DIR, 'ct008-duplicate-snapshot.json');
+    fs.writeFileSync(snapshotPath, '{"event_id":"CLI-DUP","amount":1,"amount":1000}');
+
+    const result = await runCli(['sign', snapshotPath]);
+
+    assert.strictEqual(result.exitCode, 2, `Expected exit code 2, got ${result.exitCode}`);
+    assert.ok((result.stdout + result.stderr).includes('Duplicate property name'), 'Expected duplicate key error');
+    console.log('  ✓ CT-008 passed');
+  });
+
 });
 
 // ============================================

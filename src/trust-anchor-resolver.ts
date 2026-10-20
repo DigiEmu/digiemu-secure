@@ -11,6 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'node:url';
+import { parseStrictJson } from './strict-json-parser.js';
 
 // Types matching the v0.3 Trust Anchor Model
 
@@ -66,7 +67,7 @@ export class TrustAnchorResolver {
       }
 
       const content = fs.readFileSync(this.anchorSetPath, 'utf-8');
-      this.anchorSet = JSON.parse(content) as TrustAnchorSet;
+      this.anchorSet = parseStrictJson(content) as TrustAnchorSet;
 
       console.log(`Trust anchor set loaded: ${this.anchorSet.anchors.length} anchors`);
       return true;

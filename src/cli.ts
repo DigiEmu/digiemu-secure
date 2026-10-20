@@ -24,6 +24,7 @@ import { generateKeyPairSync, sign } from 'node:crypto';
 import { BundleVerifier } from './bundle-verifier.js';
 import { SignatureVerifier } from './signature-verifier.js';
 import { canonicalJson } from './canonical-json.js';
+import { parseStrictJson } from './strict-json-parser.js';
 import { sha256Hex } from './hash-utils.js';
 
 // Types
@@ -207,7 +208,7 @@ class SecureCLI {
     let snapshot: unknown;
     try {
       const content = fs.readFileSync(snapshotPath, 'utf-8');
-      snapshot = JSON.parse(content);
+      snapshot = parseStrictJson(content);
     } catch (error) {
       return {
         success: false,
@@ -376,7 +377,7 @@ class SecureCLI {
     let snapshot: unknown;
     try {
       const content = fs.readFileSync(snapshotPath, 'utf-8');
-      snapshot = JSON.parse(content);
+      snapshot = parseStrictJson(content);
     } catch (error) {
       return {
         success: false,
