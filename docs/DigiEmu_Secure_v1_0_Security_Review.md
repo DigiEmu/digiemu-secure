@@ -3,8 +3,27 @@
 **Version:** v0.13.0  
 **Review Date:** June 16, 2026  
 **Target Release:** v1.0.0-rc.1  
-**Reviewer:** Independent Security Assessment  
-**Status:** CONFIDENTIAL - For Repository Publication
+**Reviewer:** Independent Security Assessment *(qualified 2026-10-29: no independent assessor or assessment evidence is identified; treat as an internal self-review — see Correction Notice)*\
+**Status:** CONFIDENTIAL - For Repository Publication *(qualified 2026-10-29: this document is tracked in the repository and its closing note states it is intended for public disclosure; it should not be treated as confidential)*
+
+---
+
+> ## ⚠️ Correction and Status Notice (2026-10-29)
+>
+> **This is a historical document.** It records an internal review dated June 16, 2026 for v0.13.0 and is preserved for traceability. Original statements are kept; qualifications added on 2026-10-29 are marked *"qualified 2026-10-29"* or shown with ~~strikethrough~~.
+>
+> - **Not production ready.** This review does **not** establish current production readiness, certification, regulatory approval or completed penetration testing. DigiEmu Secure is an **experimental prototype under technical review**.
+> - **Not independently validated.** No independent assessor, engagement record or assessment evidence is identified in the repository. The "Independent Security Assessment" attribution is unsupported.
+> - **Known security limitations not reflected in the original review** (see [`SECURITY.md`](../SECURITY.md) → *Known Security Limitations*):
+>   - Bundled public keys can yield `SECURE_PASS` without independent issuer trust when strict registry mode is not enabled (the default in CLI and API).
+>   - **Registry signature verification (SEC-014) is not implemented.** The code defines SEC-014 but never emits it.
+>   - Bundle signatures cover only the snapshot digest, not receipt metadata (issuer, key ID, timestamps, identifiers).
+>   - HTTP API strict registry mode is not isolated per request.
+>   - Production key management is not implemented; example CLI signing uses ephemeral keys.
+>   - Shipped registry/trust-anchor fixtures contain expired or inconsistent material.
+> - **Unsupported evidence claims.** Several metrics and test results below are not supported by repository evidence; they are qualified inline (Sections 7.1–7.3).
+>
+> Statements below that conflict with this notice should be read as the June 2026 author's assessment, not as current facts.
 
 ---
 
@@ -13,6 +32,8 @@
 ### 1.1 Security Posture Overview
 
 DigiEmu Secure v0.13.0 demonstrates a **mature security posture** with comprehensive cryptographic verification, trust anchor validation, and robust error handling. The implementation addresses core security requirements for evidence bundle verification in humanitarian deployment contexts.
+
+> *Qualified 2026-10-29:* The "mature security posture" assessment is not supported. Issuer trust can be bypassed via bundled public keys when strict registry mode is disabled, registry signatures are not verified (SEC-014), and receipt metadata is not covered by bundle signatures. The implementation is a prototype and is not suitable for humanitarian or other trusted deployments without resolving the limitations listed in `SECURITY.md`.
 
 **Key Security Strengths:**
 - Ed25519 signature verification with SHA-256 hashing
@@ -26,12 +47,14 @@ DigiEmu Secure v0.13.0 demonstrates a **mature security posture** with comprehen
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| CLI | ✅ Production Ready | All integration tests passing |
-| API | ✅ Production Ready | Security hardening complete |
-| Bundle Verifier | ✅ Production Ready | Trust anchor validation integrated |
-| Registry Resolver | ✅ Production Ready | Full issuer/key resolution |
-| Trust Anchor Resolver | ✅ Production Ready | Active anchor validation |
-| Signature Verifier | ✅ Production Ready | Ed25519 verification verified |
+| CLI | ~~✅ Production Ready~~ Prototype | All integration tests passing *(signing uses ephemeral keys; no production key management)* |
+| API | ~~✅ Production Ready~~ Prototype | Security hardening complete *(qualified: strict registry mode not isolated per request; no rate limiting — MED-001)* |
+| Bundle Verifier | ~~✅ Production Ready~~ Prototype | Trust anchor validation integrated *(qualified: bundled public-key fallback yields SECURE_PASS when strict mode is off)* |
+| Registry Resolver | ~~✅ Production Ready~~ Prototype | Full issuer/key resolution *(qualified: registry signatures not verified — SEC-014 not implemented)* |
+| Trust Anchor Resolver | ~~✅ Production Ready~~ Prototype | Active anchor validation |
+| Signature Verifier | ~~✅ Production Ready~~ Prototype | Ed25519 verification verified *(qualified: signs snapshot digest only; receipt metadata not covered)* |
+
+> *Qualified 2026-10-29:* The original "Production Ready" statuses (struck through) are not supported by evidence. No component is currently production ready.
 
 ### 1.3 Review Scope
 
@@ -100,6 +123,8 @@ const tempPath = `${tempDir}/secure-api-bundle-${crypto.randomUUID()}.json`;
 
 **Assessment:** ✅ SECURE - Input validation and resource limits implemented
 
+> *Qualified 2026-10-29:* The snippet above reflects v0.13.0. On branch `fix/rfc8785-canonicalization` the body is read with `express.text` and parsed by `parseStrictJson` (duplicate keys and malformed JSON → HTTP 400 `INVALID_JSON`). Open issues not covered by this assessment: `strict_registry: true` calls `setStrictMode(true)` on a verifier shared across requests and is never reset (no per-request isolation); no rate limiting (MED-001); permissive CORS (`*`).
+
 ### 2.3 Bundle Verifier (`src/bundle-verifier.ts`)
 
 **Security Design:**
@@ -130,6 +155,8 @@ const tempPath = `${tempDir}/secure-api-bundle-${crypto.randomUUID()}.json`;
 - SEC-015: REGISTRY_NOT_TRUSTED
 
 **Assessment:** ✅ SECURE - Comprehensive verification with trust anchor validation
+
+> *Qualified 2026-10-29:* SEC-014 (REGISTRY_SIGNATURE_INVALID) is defined but **never emitted**; the "registry trust validation" in Step 6 only checks that the issuer exists in the registry file. Without a configured registry and strict mode, Steps 7–8 are skipped and the bundle's own `public_key` is used, which can produce `SECURE_PASS` for a bundle signed with any self-generated key. Step 10 passes when a report is merely present; it does not compare contents.
 
 ### 2.4 Registry Resolver (`src/registry-resolver.ts`)
 
@@ -185,6 +212,8 @@ verifySignature(
 
 **Assessment:** ✅ SECURE - Uses Node.js built-in cryptographic primitives
 
+> *Qualified 2026-10-29:* The interface sketch above does not match the implementation. `verifySignature` takes a **hex**-encoded signature and a raw 32-byte base64 public key wrapped as SPKI DER (not JWK), and verifies Ed25519 over the 32-byte SHA-256 digest of the canonical snapshot. Receipt metadata (issuer, key ID, timestamps, identifiers) is not covered by the signature.
+
 ---
 
 ## 3. Threat Model
@@ -209,7 +238,7 @@ verifySignature(
 - Public key resolution via trusted registry
 - Trust anchor validation before key resolution
 
-**Status:** ✅ MITIGATED
+**Status:** ✅ MITIGATED *(qualified 2026-10-29: only when a registry and trust anchors are configured and strict registry mode is enabled; otherwise an attacker can sign with their own key and embed it in the bundle to obtain `SECURE_PASS`)*
 
 ### 3.3 Revoked Issuers
 
@@ -242,7 +271,7 @@ verifySignature(
 - Registry signature validation framework (SEC-014)
 - Strict registry mode for production
 
-**Status:** ✅ MITIGATED
+**Status:** ✅ MITIGATED *(qualified 2026-10-29: **not mitigated** — registry signature verification (SEC-014) is not implemented and registries carry no signature, so a modified registry file is accepted)*
 
 ### 3.6 Replay Attacks
 
@@ -265,7 +294,7 @@ verifySignature(
 - Size limits (HTTP 413)
 - Try-catch error handling
 
-**Status:** ✅ MITIGATED
+**Status:** ✅ MITIGATED *(qualified 2026-10-29: no JSON schema validation is implemented; only ad-hoc field checks exist. Strict parsing with duplicate-key rejection was added later on branch `fix/rfc8785-canonicalization`)*
 
 ### 3.8 Denial-of-Service
 
@@ -329,6 +358,8 @@ if (this.strictRegistry) {
 ```
 
 **Verification:** TC-006 conformance test validates strict mode behavior.
+
+> *Qualified 2026-10-29:* Resolved only as an **opt-in** control. Strict mode is disabled by default in the CLI and API, so the original issue still applies to default usage. In the HTTP API, strict mode is set on a shared verifier and is not isolated per request.
 
 ### 5.2 API Input Validation (RESOLVED)
 
@@ -395,6 +426,8 @@ logger.info({
 
 **Note:** Framework is in place (SEC-014), full cryptographic validation recommended for v1.1.
 
+> *Qualified 2026-10-29:* Registry signature verification is **not implemented**. Only the SEC-014 failure-code constant exists; no code path verifies a registry signature or emits SEC-014, and the registry format has no signature field.
+
 ### 6.3 Rate Limiting (RECOMMENDED)
 
 **Priority:** MEDIUM  
@@ -435,6 +468,8 @@ const limiter = rateLimit({
 | CI passes | ✅ PASS | GitHub Actions green |
 | Security review | ✅ PASS | This document |
 
+> *Qualified 2026-10-29:* "Security review ✅ PASS" is self-referential and is withdrawn as evidence of security readiness. "API tests 7/7" is not supported: the API test suite at the review commit (`2b6a358`) contains six tests (AT-001–AT-006), and no oversized-payload (HTTP 413) test exists. CI results were not re-verified.
+
 ### 7.2 Test Results
 
 ```
@@ -452,8 +487,8 @@ API Integration Tests:
 ✓ AT-003: POST /verify tampered bundle returns SECURE_FAIL + SEC-004
 ✓ AT-004: POST /verify invalid bundle returns SECURE_FAIL + SEC-001
 ✓ AT-005: POST /verify strict_registry=true without registry returns SECURE_FAIL + SEC-006
-✓ AT-006: POST /verify malformed JSON returns 400
-✓ AT-007: POST /verify oversized payload returns 413
+✓ AT-006: POST /verify malformed JSON returns 400   [qualified 2026-10-29: the actual test sends a request without "bundle", not malformed JSON]
+✓ AT-007: POST /verify oversized payload returns 413   [qualified 2026-10-29: no oversized-payload test exists in tests/api.test.ts; the AT-007 added later tests duplicate-key rejection]
 
 CLI Integration Tests:
 ✓ CT-001: verify valid bundle returns exit code 0
@@ -474,6 +509,8 @@ CLI Integration Tests:
 | ESLint warnings | 0 | 0 |
 | Dependency vulnerabilities | 0 | 0 |
 
+> *Qualified 2026-10-29:* "Test coverage 100%" is not measured (no coverage tooling is configured). "ESLint warnings 0" is not applicable (ESLint is not configured in this repository). "Dependency vulnerabilities 0" is not evidenced in the repository; CI runs `npm audit --audit-level=moderate` on `main` and pull requests, but no audit result is recorded here.
+
 ---
 
 ## 8. Conclusion
@@ -491,6 +528,8 @@ DigiEmu Secure v0.13.0 meets the security requirements for a v1.0.0 release cand
 - ✅ Correct CLI exit semantics
 - ✅ Full test coverage
 - ✅ No critical or high findings
+
+> *Qualified 2026-10-29:* The "APPROVED FOR v1.0.0-rc.1" verdict is historical and is **not** an approval for production or trusted deployment. The bundled public-key trust bypass (default configuration), missing registry signature verification (SEC-014) and incomplete signature coverage of receipt metadata should be treated as critical or high severity for any trusted deployment. "Full test coverage" is not measured. No third-party penetration test is documented (see 8.3, where it is listed as a future recommendation).
 
 ### 8.2 Release Conditions
 
@@ -515,6 +554,7 @@ For v1.1.0:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-16 | Security Review | Initial review for v0.13.0 |
+| 1.0-q1 | 2026-10-29 | DigiEmu maintainers | Added Correction and Status Notice; qualified unsupported production-readiness, independence, maturity, SEC-014 and test-evidence claims. Original statements preserved. |
 
 ## Appendix B: References
 
@@ -533,3 +573,5 @@ For v1.1.0:
 **END OF SECURITY REVIEW**
 
 *This document is part of the DigiEmu Secure repository and is intended for public disclosure.*
+
+*Qualified 2026-10-29: This is a historical internal review, not an independent assessment, certification or statement of production readiness. See the Correction and Status Notice at the top of this document and `SECURITY.md` → Known Security Limitations.*
